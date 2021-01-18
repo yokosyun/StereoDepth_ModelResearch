@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+
+#custom
+result/
+logs/
+*.png
+*.pyc
+*/*.pyc

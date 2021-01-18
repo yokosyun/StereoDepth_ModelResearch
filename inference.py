@@ -15,15 +15,12 @@ from models import concatNet as concatNet
 from PIL import Image
 from torchvision.utils import save_image
 
-
-
-
 parser = argparse.ArgumentParser(description='PSMNet')
 parser.add_argument('--KITTI', default='2015',
                     help='KITTI version')
-parser.add_argument('--datapath', default='/media/jiaren/ImageNet/data_scene_flow_2015/testing/',
+parser.add_argument('--datapath', default='/media/yoko/SSD-PGU3/workspace/datasets/KITTI/data_scene_flow/training/',
                     help='select model')
-parser.add_argument('--loadmodel', default='./trained/pretrained_model_KITTI2015.tar',
+parser.add_argument('--loadmodel', default='./result/model.tar',
                     help='loading model')                                  
 parser.add_argument('--model', default='stackhourglass',
                     help='select model')
@@ -43,14 +40,6 @@ else:
 test_left_img, test_right_img = DA.dataloader(args.datapath)
 
 
-from dataloader import KITTIloader2015 as lt
-from dataloader import KITTILoader as DA_tmp
-all_left_img, all_right_img, all_left_disp, test_left_img_tmp, test_right_img_tmp, test_left_disp = lt.dataloader(args.datapath)
-
-TrainImgLoader = torch.utils.data.DataLoader(
-         DA_tmp.myImageFloder(all_left_img,all_right_img,all_left_disp, True), 
-         batch_size= 1, shuffle= True, num_workers= 8, drop_last=False)
-
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -68,7 +57,9 @@ else:
     print('no model')
 
 model = nn.DataParallel(model, device_ids=[0])
-model.cuda()
+if args.cuda:
+    model.cuda()
+
 
 if args.loadmodel is not None:
     print('load PSMNet')
@@ -77,30 +68,39 @@ if args.loadmodel is not None:
 
 print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
 
+
+
+print("args.cuda=",args.cuda)
+
+
+
 def test(imgL,imgR):
         model.eval()
 
         if args.cuda:
            imgL = imgL.cuda()
            imgR = imgR.cuda()
-    
+
+
 
         with torch.no_grad():
             start_time = time.time()
-            disp, disp_right, tmp_right,tmp_left= model(imgL,imgR)
-            # disp, disp_right= model(imgL,imgR)
-            print('time = %.2f' %(time.time() - start_time))
+            pred_dispL, disp_right, tmp_right,tmp_left= model(imgL,imgR)
+            processing_time = time.time() - start_time
+            print('time = %.4f' %(processing_time))
 
-        #save image
-        #save_image(disp/torch.max(disp), 'disp.png')
+            
 
-        disp = torch.squeeze(disp)
-        pred_disp = disp.data.cpu().numpy()
+        pred_dispL = torch.squeeze(pred_dispL)
+        pred_dispL = pred_dispL.data.cpu().numpy()
 
-        return pred_disp,disp_right
+        return pred_dispL,processing_time
 
 
 def main():
+        total_time = 0
+        cnt = 0
+        
     
         for inx in range(len(test_left_img)):
 
@@ -128,26 +128,26 @@ def main():
             imgL = F.pad(imgL,(0,right_pad, top_pad,0)).unsqueeze(0)
             imgR = F.pad(imgR,(0,right_pad, top_pad,0)).unsqueeze(0)
 
-            # start_time = time.time()
-            # pred_disp , disp_right = test(imgL,imgR)
-            pred_disp , disp_right = test(imgL,imgR)
-            # print('time = %.2f' %(time.time() - start_time))
+            pred_dispL ,processing_time = test(imgL,imgR)
 
+
+            if(inx>=10):
+                total_time += processing_time
+                cnt+=1
             
             if top_pad !=0 or right_pad != 0:
-                img = pred_disp[top_pad:,:-right_pad]
+                img = pred_dispL[top_pad:,:-right_pad]
             else:
-                img = pred_disp
+                img = pred_dispL
 
 
             #save image
-            img = (img*256).astype('uint16')
-            img = Image.fromarray(img)
-            img.save("result/"+test_left_img[inx].split('/')[-1])
+            if(True):
+                img = (img*256).astype('uint16')
+                img = Image.fromarray(img)
+                img.save("result/inference/"+test_left_img[inx].split('/')[-1])
 
-            imgL_o.save("result/tmp.png")
-
-            save_image(imgL,"result/tensor.png")
+        print("average processing time = ",total_time/cnt )
 
 
 if __name__ == '__main__':
