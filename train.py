@@ -141,15 +141,10 @@ def train(imgL,imgR, disp_L):
         elif args.model == 'concatNet':
             refined_disp_left, refined_disp_right, disp_left,disp_right = model(imgL,imgR)
 
-            print("refined_disp_left.shape=",refined_disp_left.shape)
-            print("disp_left.shape=",disp_left.shape)
-
 
             if refined_disp_left.ndim == 4:
                 refined_disp_left = torch.squeeze(refined_disp_left,0)
                 refined_disp_right = torch.squeeze(refined_disp_right,0)
-
-            print("refined_disp_left.shape=",refined_disp_left.shape)
 
             
             gt_loss = F.smooth_l1_loss(refined_disp_left[mask], disp_true[mask], size_average=True)
@@ -161,8 +156,8 @@ def train(imgL,imgR, disp_L):
 
 
             loss =  REC_loss  + lr_loss + gt_loss + disp_smooth_loss
-            save_image(disp_left/torch.max(disp_left), 'disp_left_tmp.png')
-            save_image(disp_right/torch.max(disp_right), 'disp_right_tmp.png')
+            save_image(disp_left/torch.max(disp_left), 'result/train/disp_left_tmp.png')
+            save_image(disp_right/torch.max(disp_right), 'result/train/disp_right_tmp.png')
         loss.backward()
         optimizer.step()
 
@@ -251,7 +246,7 @@ def main():
 
 
         #SAVE
-        savefilename = args.savemodel+'/' + args.model +str(epoch)+'.tar'
+        savefilename = "result/weights"+'/' + args.model +str(epoch)+'.tar'
         torch.save({
 		    'epoch': epoch,
 		    'state_dict': model.state_dict(),

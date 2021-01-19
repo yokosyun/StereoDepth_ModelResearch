@@ -25,8 +25,8 @@ class LRLoss(nn.Module):
         SAD_right = torch.mean(torch.abs(right - estRight))
 
 
-        save_image(torch.abs(left - estLeft)[:,0,:,:], 'SAD.png')
-        save_image( ((left - estLeft)**2 )[:,0,:,:], 'MSE.png')
+        save_image(torch.abs(left - estLeft)[:,0,:,:], 'result/train/SAD.png')
+        save_image( ((left - estLeft)**2 )[:,0,:,:], 'result/train/MSE.png')
 
         SSIM_left = 0.5 * self.SSIM1(gray_left,gray_estLeft,3) + 0.5 * self.SSIM1(gray_left,gray_estLeft,5)
         SSIM_right = 0.5 * self.SSIM1(gray_right,gray_esttRight,3) + 0.5 * self.SSIM1(gray_right,gray_esttRight,5)
@@ -53,12 +53,12 @@ class LRLoss(nn.Module):
 
 
         if(True):
-            save_image(right, 'right.png')
-            save_image(left, 'left.png')
-            save_image(estRight, 'estRight.png')
-            save_image(estLeft, 'estLeft.png')
-            save_image(disp_right/torch.max(disp_right), 'disp_right.png')
-            save_image(disp_left/torch.max(disp_left), 'disp_left.png')
+            save_image(right, 'result/train/right.png')
+            save_image(left, 'result/train/left.png')
+            save_image(estRight, 'result/train/estRight.png')
+            save_image(estLeft, 'result/train/estLeft.png')
+            save_image(disp_right/torch.max(disp_right), 'result/train/disp_right.png')
+            save_image(disp_left/torch.max(disp_left), 'result/train/disp_left.png')
 
       
         return 1 * REC_loss, 0.1 * disp_smooth_loss,  0.1 * lr_loss
@@ -215,12 +215,12 @@ class LRLoss(nn.Module):
 
         weight_pixle = neiborhood_filter * weight_pixle
 
-        save_image(weight_pixle, 'weight_pixle.png')
+        save_image(weight_pixle, 'result/train/weight_pixle.png')
 
-        save_image(max_depth_filter.float(), 'max_depth_filter.png')
-        save_image(depth_mask_full_100.float(), 'depth_mask_full_100.png')
-        save_image(neiborhood_filter.float(), 'neiborhood_filter.png')
-        save_image(weight_pixle, 'weight_pixle.png')
+        save_image(max_depth_filter.float(), 'result/train/max_depth_filter.png')
+        save_image(depth_mask_full_100.float(), 'result/train/depth_mask_full_100.png')
+        save_image(neiborhood_filter.float(), 'result/train/neiborhood_filter.png')
+        save_image(weight_pixle, 'result/train/weight_pixle.png')
 
         return neiborhood_filter
 
@@ -255,8 +255,8 @@ class LRLoss(nn.Module):
 
         # you can check the peformance
         if (True):
-            save_image(depth_lap, './result/depth_lap.png')
-            save_image(masking_depth_lap, './result/masking_depth_lap.png')
+            save_image(depth_lap, 'result/train/depth_lap.png')
+            save_image(masking_depth_lap, 'result/train/masking_depth_lap.png')
 
         return torch.mean(masking_depth_lap)
 
@@ -285,12 +285,12 @@ class LRLoss(nn.Module):
 
         # you can check the peformance
         if (True):
-            save_image(gray/torch.max(gray), './result/gray.png')
-            save_image(disp/torch.max(disp), './result/disp.png')
-            save_image(disp_lap, './result/disp_lap.png')
-            save_image(img/torch.max(img), './result/img.png')
-            save_image(img_lap/torch.max(img_lap), './result/img_lap.png')
-            save_image(masking_disp_lap, './result/masking_disp_lap.png')
+            save_image(gray/torch.max(gray), 'result/train/gray.png')
+            save_image(disp/torch.max(disp), 'result/train/disp.png')
+            save_image(disp_lap, 'result/train/disp_lap.png')
+            save_image(img/torch.max(img), 'result/train/img.png')
+            save_image(img_lap/torch.max(img_lap), 'result/train/img_lap.png')
+            save_image(masking_disp_lap, 'result/train/masking_disp_lap.png')
 
         return torch.mean(masking_disp_lap)
 
@@ -324,57 +324,9 @@ class LRLoss(nn.Module):
 
         loss = torch.clamp((1 - SSIM) , 0, 2)
         if(True):
-            save_image(loss, 'SSIM_GRAY1.png')
+            save_image(loss, 'result/train/SSIM_GRAY1.png')
 
         return  torch.mean(loss)
-
-    # TODO! this doesn't work find out reason
-    # def SSIM2(self, x, y,window_size=3):
-    #     C1 = 0.01 ** 2
-    #     C2 = 0.03 ** 2
-    #     clip_size = (window_size -1)/2
-
-    #     mu_x = nn.functional.avg_pool2d(x, window_size, 1, padding=1)
-    #     mu_y = nn.functional.avg_pool2d(y, window_size, 1, padding=1)
-        
-
-    #     print(x)
-    #     print(x**2)
-
-
-    #     sigma_x = nn.functional.avg_pool2d(x**2, window_size, 1, padding=1)-mu_x**2
-    #     sigma_y = nn.functional.avg_pool2d(y**2, window_size, 1, padding=1)-mu_y**2
-
-    #     print("sigma_x2=",torch.max(sigma_x))
-    #     print("sigma_x2=",torch.min(sigma_x))
-
-    #     print(sigma_x)
-
-    #     # x = x[:,:,clip_size:-clip_size,clip_size:-clip_size]
-    #     # y = y[:,:,clip_size:-clip_size,clip_size:-clip_size]
-        
-    #     sigma_xy = (
-    #         nn.functional.avg_pool2d(x * y, window_size, 1, padding=1) - mu_x * mu_y
-    #     )
-
-    #     # mu_x = mu_x[:,:,clip_size:-clip_size,clip_size:-clip_size]
-    #     # mu_y = mu_y[:,:,clip_size:-clip_size,clip_size:-clip_size]
-
-    #     # sigma_x = sigma_x[:,:,clip_size:-clip_size,clip_size:-clip_size]
-    #     # sigma_y = sigma_y[:,:,clip_size:-clip_size,clip_size:-clip_size]
-
-    #     SSIM_n = (2 * mu_x * mu_y + C1) * (2 * sigma_xy + C2)
-    #     SSIM_d = (mu_x ** 2 + mu_y ** 2 + C1) * (sigma_x + sigma_y + C2)
-
-    #     SSIM = SSIM_n / SSIM_d
-
-    #     # print("SSIM2=",torch.max(SSIM))
-    #     # print("SSIM2=",torch.min(SSIM))
-
-    #     loss = torch.clamp((1 - SSIM) , 0, 2)
-    #     save_image(loss, 'SSIM_GRAY2.png')
-
-    #     return  torch.mean(loss)
 
 
     def getGrayImage(self,rgbImg):
