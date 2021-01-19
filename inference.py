@@ -11,7 +11,7 @@ import time
 import math
 from models import stackhourglass as psm_net
 from models import basic as basic_net
-from models import concatNet as concatNet
+from models import FCSMNet as FCSMNet
 from PIL import Image
 from torchvision.utils import save_image
 
@@ -51,8 +51,8 @@ if args.model == 'stackhourglass':
     model = psm_net.PSMNet(args.maxdisp)
 elif args.model == 'basic':
     model = basic_net.PSMNet(args.maxdisp)
-elif args.model == 'concatNet':
-    model = concatNet.PSMNet(args.maxdisp)
+elif args.model == 'FCSMNet':
+    model = FCSMNet.PSMNet(args.maxdisp)
 else:
     print('no model')
 
