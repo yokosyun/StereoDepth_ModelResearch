@@ -112,7 +112,7 @@ class PSMNet(nn.Module):
  
         self.classify = nn.Sequential(nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1),
                                       nn.ReLU(inplace=True),
-                                      nn.Conv2d(in_channels, 1, kernel_size=3, padding=1))
+                                      nn.Conv2d(in_channels, 2, kernel_size=3, padding=1))
 
 
 
@@ -144,29 +144,22 @@ class PSMNet(nn.Module):
         return up1
 
 
+
+
     def disparity_regression(self, input, height, width):
-        left_disp = self.classify(input)
-        left_disp = torch.sigmoid(left_disp)
-        left_disp = left_disp * self.maxdisp
-        left_disp = F.upsample(left_disp, [height,width],mode='bilinear')
-        return left_disp
-
-
-
-    # def disparity_regression(self, input, height, width):
     
-    #     lr_disp = self.classify(input)
-    #     lr_disp = torch.sigmoid(lr_disp)
-    #     lr_disp = lr_disp * self.maxdisp
-    #     left_disp = lr_disp[:,0,:,:]
-    #     right_disp = lr_disp[:,1,:,:]
-    #     if left_disp.ndim ==3:
-    #          left_disp = torch.unsqueeze(left_disp,0)
-    #          right_disp = torch.unsqueeze(right_disp,0)
-    #     left_disp = F.upsample(left_disp, [height,width],mode='bilinear')
-    #     right_disp = F.upsample(right_disp, [height,width], mode='bilinear')
+        lr_disp = self.classify(input)
+        lr_disp = torch.sigmoid(lr_disp)
+        lr_disp = lr_disp * self.maxdisp
+        left_disp = lr_disp[:,0,:,:]
+        right_disp = lr_disp[:,1,:,:]
+        if left_disp.ndim ==3:
+             left_disp = torch.unsqueeze(left_disp,0)
+             right_disp = torch.unsqueeze(right_disp,0)
+        left_disp = F.upsample(left_disp, [height,width],mode='bilinear')
+        right_disp = F.upsample(right_disp, [height,width], mode='bilinear')
 
-    #     return left_disp,right_disp
+        return left_disp,right_disp
 
 
 
@@ -180,6 +173,6 @@ class PSMNet(nn.Module):
  
         up1 = self.estimate_disparity(lr_feature)
 
-        pred_left = self.disparity_regression(up1,left.size()[2],left.size()[3])
+        pred_left,disp_right = self.disparity_regression(up1,left.size()[2],left.size()[3])
 
-        return pred_left
+        return pred_left,disp_right

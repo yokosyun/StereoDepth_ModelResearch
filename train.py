@@ -21,6 +21,7 @@ from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 import torchvision.transforms as transforms
+from utils.loss  import *
 
 writer_train = SummaryWriter(log_dir="./logs/train")
 writer_test = SummaryWriter(log_dir="./logs/test")
@@ -49,16 +50,16 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = lt.dataloader(args.datapath)
+all_left_img, all_right_img, all_left_disp,all_right_disp, test_left_img, test_right_img, test_left_disp = lt.dataloader(args.datapath)
 
 
 TrainImgLoader = torch.utils.data.DataLoader(
-         DA.myImageFloder(all_left_img,all_right_img,all_left_disp, True), 
-         batch_size= 1, shuffle= True, num_workers= 8, drop_last=False)
+         DA.myImageFloder(all_left_img,all_right_img,all_left_disp,all_right_disp, True), 
+         batch_size= 1, shuffle= False, num_workers= 8, drop_last=False)
 
-TestImgLoader = torch.utils.data.DataLoader(
-         DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
-         batch_size= 1, shuffle= False, num_workers= 4, drop_last=False)
+# TestImgLoader = torch.utils.data.DataLoader(
+#          DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
+#          batch_size= 1, shuffle= False, num_workers= 4, drop_last=False)
 
 
 from dataloader import KITTI_submission_loader as DA
@@ -89,64 +90,106 @@ print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in mo
 
 optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999))
 
+criterian = LRLoss()
+
+
+def left2right(disp,ind):
+    disp = disp.cpu()
+    focal = 7.070493000000e+02
+    baseline = 0.54
+    eps = 0.00000001
+    depth = focal * baseline /(disp+eps)
+
+    
+
+    thresh = torch.nn.Threshold(threshold = -100.0,value= 0.0 , inplace = False)
+    thresh_ind = torch.nn.Threshold(threshold = -disp.shape[2],value= 0.0 , inplace = False)    
+    depth =thresh(-depth)
+    depth = depth*(-1)
+
+    save_image(depth, 'result/train/depth.png')
+    save_image(disp/torch.max(disp), 'result/train/disp_aaaaa.png')
+
+    disp_r = torch.zeros([1,disp.shape[1],disp.shape[2]])
+
+    num = "%.6d" %(ind)
+    
+    filename = str(num)
+ 
+    filename += "_10.png" 
+
+    print(filename)
+
+    print('result/disp_r/'+filename)
+
+
+    cx= depth.shape[2]/2
+    for u in range (depth.shape[2]):
+        for v in range (depth.shape[1]):    
+            depth_z = depth[:,v,u]
+            Y_l = -(u -cx) * depth_z / focal
+            Y_r = Y_l + baseline
+            x =  -1 * Y_r * focal / (depth_z+eps) + cx
+            x = int(x)
+            if x >= depth.shape[2] or x <0:
+                x = 0
+            
+            if disp_r[:,v,x] == 0.0:
+                disp_r[:,v,x] = disp[:,v,u]
+            else:
+                if disp[:,v,u] >disp_r[:,v,x]:
+                    disp_r[:,v,x] = disp[:,v,u]              
+
+                
+    save_image(disp_r/torch.max(disp), 'result/disp_r/tmp.png')
+    disp_r = torch.squeeze(disp_r)
+    disp_r = disp_r.data.cpu().numpy()
+    img = disp_r
+    img = (img*256).astype('uint16')
+    img = Image.fromarray(img)
+    img.save('result/disp_r/'+filename)
+        
+
+
+
+
+
 
 print("train")
-def train(imgL,imgR, disp_L):
+def train(imgL,imgR, disp_L,disp_R,idx):
         model.train()
 
         if args.cuda:
-            imgL, imgR, disp_true = imgL.cuda(), imgR.cuda(), disp_L.cuda()
+            imgL, imgR, disp_trueL, disp_trueR= imgL.cuda(), imgR.cuda(), disp_L.cuda(),disp_R.cuda()
 
-        mask = (disp_true < args.maxdisp)
-        mask = (disp_true > 0) # this is required, dispity should be more than 0
-        mask.detach_()
+        maskL = (disp_trueL < args.maxdisp)
+        maskL = (disp_trueL > 0) # this is required, dispity should be more than 0
+        maskL.detach_()
+
+        maskR = (disp_trueR < args.maxdisp)
+        maskR = (disp_trueR > 0) # this is required, dispity should be more than 0
+        maskR.detach_()
         optimizer.zero_grad()
-
 
         start_time = time.time()
 
-        
-        if args.model == 'stackhourglass':
-            output1, output2, output3 = model(imgL,imgR)
-            output1_r, output2_r, output3_r = model(imgR,imgL)
-            
-            output1 = torch.squeeze(output1,1)
-            output2 = torch.squeeze(output2,1)
-            output3 = torch.squeeze(output3,1)
-            
-            #TODO! remove this lines after debug
-            # save_image(output1/torch.max(output1), 'output1.png')
-            # save_image(output2/torch.max(output2), 'output2.png')
-            # save_image(output3/torch.max(output3), 'output3.png')
-
-            loss = 0.5*F.smooth_l1_loss(output1[mask], disp_true[mask], size_average=True) + 0.7*F.smooth_l1_loss(output2[mask], disp_true[mask], size_average=True) + F.smooth_l1_loss(output3[mask], disp_true[mask], size_average=True) 
-        
-
-
-        elif args.model == 'basic':
-            disp_left, disp_right = model(imgL,imgR)
-            disp_left = torch.squeeze(disp_left,1)
-            disp_right = torch.squeeze(disp_right,1)
-
-            
-            # loss = F.smooth_l1_loss(disp_left[mask], disp_true[mask], size_average=True)
-
-            disp_left = torch.unsqueeze(disp_left,0)
-            disp_right = torch.unsqueeze(disp_right,0)
-            
-            REC_loss,  disp_smooth_loss, lr_loss = criterion(disp_left,disp_right,imgL,imgR)
-
-
-            loss =  REC_loss + disp_smooth_loss + lr_loss 
-
-
-        elif args.model == 'FCSMNet':
-            disp_left = model(imgL,imgR)
+        if args.model == 'FCSMNet':
+            disp_left,disp_right = model(imgL,imgR)
         
         print('prediction_time = %.4f [s]' %(time.time() - start_time))
+
+        if idx <10:
+            save_image(disp_left/torch.max(disp_left), 'result/train/"left_' + test_left_img[idx].split('/')[-1])
+            save_image(disp_left/torch.max(disp_left), 'result/train/"right_' + test_left_img[idx].split('/')[-1])
+
+        
+        criterian(disp_left,disp_right,imgL,imgR)
         if disp_left.ndim == 4:
             disp_left = torch.squeeze(disp_left,0)
-        loss = F.smooth_l1_loss(disp_left[mask], disp_true[mask], size_average=True)
+            disp_right = torch.squeeze(disp_right,0)
+        loss = F.smooth_l1_loss(disp_left[maskL], disp_trueL[maskL], size_average=True) + F.smooth_l1_loss(disp_right[maskR], disp_trueR[maskR], size_average=True)
+        
+
 
         loss.backward()
         optimizer.step()
@@ -181,8 +224,9 @@ def test():
         imgL = F.pad(imgL,(0,right_pad, top_pad,0)).unsqueeze(0)
         imgR = F.pad(imgR,(0,right_pad, top_pad,0)).unsqueeze(0)
 
-        pred_dispL = model(imgL,imgR)
-        save_image(pred_dispL/torch.max(pred_dispL), 'result/train/"tensor_' + test_left_img[inx].split('/')[-1])
+        pred_dispL ,pred_dispR= model(imgL,imgR)
+        save_image(pred_dispL/torch.max(pred_dispL), 'result/train/"left_' + test_left_img[inx].split('/')[-1])
+        save_image(pred_dispR/torch.max(pred_dispR), 'result/train/"right_' + test_right_img[inx].split('/')[-1])
         pred_dispL = torch.squeeze(pred_dispL)
         pred_dispL = pred_dispL.data.cpu().numpy()
 
@@ -224,11 +268,12 @@ def main():
 
 
         ## training ##
-        for batch_idx, (imgL_crop, imgR_crop, disp_crop_L) in enumerate(TrainImgLoader):
-
+        for batch_idx, (imgL_crop, imgR_crop, disp_crop_L,disp_crop_R) in enumerate(TrainImgLoader):
+            # left2right(disp_crop_L,batch_idx)
+            # continue
 
             start_time = time.time()
-            loss = train(imgL_crop,imgR_crop, disp_crop_L)
+            loss = train(imgL_crop,imgR_crop, disp_crop_L,disp_crop_R,batch_idx)
             iteration +=1
             writer_train.add_scalar(
                 "total", loss, iteration)
@@ -249,7 +294,7 @@ def main():
 
 
         #test
-        test()
+        #test()
         
     writer_train.close()
     writer_test.close()

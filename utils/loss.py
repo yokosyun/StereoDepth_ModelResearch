@@ -5,14 +5,15 @@ from torchvision.utils import save_image
 import torchvision.transforms as transforms
 from torch.nn.functional import pad
 from torchvision.utils import save_image
-
+import time
 
 
 class LRLoss(nn.Module):
     def __init__(self):
         super(LRLoss, self).__init__()
 
-    def forward(self, disp_left,disp_right, left, right):
+    def forward(self, disp_left,disp_right, left, right,viz_image=False):
+        start_time = time.time()
         estRight = self.bilinear_sampler_1d_h(left, disp_right)
         estLeft = self.bilinear_sampler_1d_h(right, -1 * disp_left)
         gray_left = self.getGrayImage(left)
@@ -20,48 +21,72 @@ class LRLoss(nn.Module):
         gray_estLeft = self.getGrayImage(estLeft)
         gray_esttRight = self.getGrayImage(estRight)
 
+
         # 1. IMAGE RECONNSTRUCTION loss
         SAD_left = torch.mean(torch.abs(left - estLeft))
         SAD_right = torch.mean(torch.abs(right - estRight))
 
+        # SSIM_left = 0.5 * self.SSIM1(gray_left,gray_estLeft,3) + 0.5 * self.SSIM1(gray_left,gray_estLeft,5)
+        # SSIM_right = 0.5 * self.SSIM1(gray_right,gray_esttRight,3) + 0.5 * self.SSIM1(gray_right,gray_esttRight,5)
+        SSIM_left =  self.SSIM(gray_left,gray_estLeft,3,"left")
+        SSIM_right = self.SSIM(gray_right,gray_esttRight,3,"right")
 
-        save_image(torch.abs(left - estLeft)[:,0,:,:], 'result/train/SAD.png')
-        save_image( ((left - estLeft)**2 )[:,0,:,:], 'result/train/MSE.png')
-
-        SSIM_left = 0.5 * self.SSIM1(gray_left,gray_estLeft,3) + 0.5 * self.SSIM1(gray_left,gray_estLeft,5)
-        SSIM_right = 0.5 * self.SSIM1(gray_right,gray_esttRight,3) + 0.5 * self.SSIM1(gray_right,gray_esttRight,5)
-
-        alpha = 0.5
+        alpha = 0.85
         rec_loss_right = alpha * SSIM_right + (1 - alpha) * SAD_right
         rec_loss_left = alpha * SSIM_left + (1 - alpha) * SAD_left
         REC_loss = rec_loss_left + rec_loss_right
 
-        # 2. Depth SMOOTHNESS loss
-        # left_disp_smooth = self.DepthSmoothness(disp_left, left)
-        # right_disp_smooth = self.DepthSmoothness(disp_right, right)
-        left_disp_smooth = self.DisparitySmoothness(disp_left, left)
-        right_disp_smooth = self.DisparitySmoothness(disp_right, right)
+        # # 2. Depth SMOOTHNESS loss
+        # # left_disp_smooth = self.DepthSmoothness(disp_left, left)
+        # # right_disp_smooth = self.DepthSmoothness(disp_right, right)
+        # left_disp_smooth = self.DisparitySmoothness(disp_left, left)
+        # right_disp_smooth = self.DisparitySmoothness(disp_right, right)
 
-        disp_smooth_loss = left_disp_smooth + right_disp_smooth
+        # disp_smooth_loss = left_disp_smooth + right_disp_smooth
 
-        # 3. LR CONSISTENCY loss
-        LtoR = self.bilinear_sampler_1d_h(disp_left, disp_right)
-        RtoL = self.bilinear_sampler_1d_h(disp_right, -1 * disp_left)
-        lr_left_loss = torch.mean(torch.abs(RtoL - disp_left))
-        lr_right_loss = torch.mean(torch.abs(LtoR - disp_right))
-        lr_loss = lr_left_loss + lr_right_loss
+        # # 3. LR CONSISTENCY loss
+        # LtoR = self.bilinear_sampler_1d_h(disp_left, disp_right)
+        # RtoL = self.bilinear_sampler_1d_h(disp_right, -1 * disp_left)
+        # lr_left_loss = torch.mean(torch.abs(RtoL - disp_left))
+        # lr_right_loss = torch.mean(torch.abs(LtoR - disp_right))
+        # lr_loss = lr_left_loss + lr_right_loss
 
 
-        if(True):
+
+        
+        # test_SAD_left = torch.mean(torch.abs(left - estLeft),1)
+        # test_SAD_right = torch.mean(torch.abs(right - estRight),1)
+
+        # test_MSE_left = torch.mean((left - estLeft)**2,1)
+        # test_MSE_right = torch.mean((right - estRight)**2,1)
+ 
+
+    
+
+
+        # save_image(test_SAD_left, 'result/train/SAD_left.png')
+        # save_image(test_MSE_left, 'result/train/MSE_left.png')
+        # save_image(test_SAD_right, 'result/train/SAD_right.png')
+        # save_image(test_MSE_right, 'result/train/MSE_right.png')
+
+
+        if(viz_image):
+            save_image(LtoR/torch.max(LtoR), 'result/train/LtoR.png')
+            save_image(RtoL/torch.max(RtoL), 'result/train/RtoL.png')
             save_image(right, 'result/train/right.png')
             save_image(left, 'result/train/left.png')
             save_image(estRight, 'result/train/estRight.png')
             save_image(estLeft, 'result/train/estLeft.png')
             save_image(disp_right/torch.max(disp_right), 'result/train/disp_right.png')
             save_image(disp_left/torch.max(disp_left), 'result/train/disp_left.png')
+            
+
+
+        print('loss_time = %.4f [s]' %(time.time() - start_time))
 
       
-        return 1 * REC_loss, 0.1 * disp_smooth_loss,  0.1 * lr_loss
+        # return 1 * REC_loss, 0.1 * disp_smooth_loss,  0.1 * lr_loss
+        return 1 * REC_loss, 0,  0
 
 
 #Bilinear sampler in pytorch(https://github.com/alwynmathew/bilinear-sampler-pytorch)
@@ -87,14 +112,16 @@ class LRLoss(nn.Module):
         # meshgrid function)
         x = torch.linspace(0, width - 1, width).repeat(height,
                                                     1).type(tensor_type).cuda()
+     
         y = torch.linspace(0, height - 1, height).repeat(width,
                                                         1).transpose(0, 1).type(tensor_type).cuda()
+        
         # Take padding into account
         x = x + edge_size
         y = y + edge_size
 
-        # Flatten and repeat for each image in the batch
 
+        # Flatten and repeat for each image in the batch
         #TO DO! use best one
         x = x.contiguous().view(-1).repeat(1, num_batch)
         y = y.contiguous().view(-1).repeat(1, num_batch)
@@ -103,9 +130,9 @@ class LRLoss(nn.Module):
         # Now we want to sample pixels with indicies shifted by disparity in X direction
         # For that we convert disparity from % to pixels and add to X indicies
         x = x + x_offset.type(tensor_type).contiguous().view(-1)
-        # x = x + x_offset.type(tensor_type).contiguous().view(-1) * width
+
         # Make sure we don't go outside of image
-        x = torch.clamp(x, 0.0, width - 1 + 2 * edge_size)
+        x = torch.clamp(x, min=0.0, max=width - 1 + 2 * edge_size)
         # Round disparity to sample from integer-valued pixel grid
         y0 = torch.floor(y)
         # In X direction round both down and up to apply linear interpolation
@@ -143,7 +170,7 @@ class LRLoss(nn.Module):
         return output
 
 
-    def getDepthMask(self,input):
+    def getDepthMask(self,input,viz_image=False):
 
         test_x = input[:,:,:,0]
         test_x = test_x.unsqueeze(3)
@@ -215,16 +242,16 @@ class LRLoss(nn.Module):
 
         weight_pixle = neiborhood_filter * weight_pixle
 
-        save_image(weight_pixle, 'result/train/weight_pixle.png')
-
-        save_image(max_depth_filter.float(), 'result/train/max_depth_filter.png')
-        save_image(depth_mask_full_100.float(), 'result/train/depth_mask_full_100.png')
-        save_image(neiborhood_filter.float(), 'result/train/neiborhood_filter.png')
-        save_image(weight_pixle, 'result/train/weight_pixle.png')
+        if(viz_image):
+            save_image(weight_pixle, 'result/train/weight_pixle.png')
+            save_image(max_depth_filter.float(), 'result/train/max_depth_filter.png')
+            save_image(depth_mask_full_100.float(), 'result/train/depth_mask_full_100.png')
+            save_image(neiborhood_filter.float(), 'result/train/neiborhood_filter.png')
+            save_image(weight_pixle, 'result/train/weight_pixle.png')
 
         return neiborhood_filter
 
-    def DepthSmoothness(self, disp, img):
+    def DepthSmoothness(self, disp, img,viz_image=False):
         # 8 direction Laplacian
         laplacian_filter = torch.cuda.FloatTensor(
             [[1, 1, 1], [1, -8, 1], [1, 1, 1]]).view(1, 1, 3, 3)
@@ -254,13 +281,13 @@ class LRLoss(nn.Module):
         masking_depth_lap = weight_pixle * depth_lap
 
         # you can check the peformance
-        if (True):
+        if (viz_image):
             save_image(depth_lap, 'result/train/depth_lap.png')
             save_image(masking_depth_lap, 'result/train/masking_depth_lap.png')
 
         return torch.mean(masking_depth_lap)
 
-    def DisparitySmoothness(self, disp, img):
+    def DisparitySmoothness(self, disp, img,viz_image=False):
         # 8 direction Laplacian
         laplacian_filter = torch.cuda.FloatTensor(
             [[1, 1, 1], [1, -8, 1], [1, 1, 1]]).view(1, 1, 3, 3)
@@ -284,7 +311,7 @@ class LRLoss(nn.Module):
         masking_disp_lap = weight_pixle * disp_lap
 
         # you can check the peformance
-        if (True):
+        if (viz_image):
             save_image(gray/torch.max(gray), 'result/train/gray.png')
             save_image(disp/torch.max(disp), 'result/train/disp.png')
             save_image(disp_lap, 'result/train/disp_lap.png')
@@ -295,7 +322,7 @@ class LRLoss(nn.Module):
         return torch.mean(masking_disp_lap)
 
 
-    def SSIM1(self, x, y,window_size=3):
+    def SSIM(self, x, y,window_size=3,name="left",viz_image=False):
         C1 = 0.01 ** 2
         C2 = 0.03 ** 2
         clip_size = (window_size -1)/2
@@ -323,8 +350,8 @@ class LRLoss(nn.Module):
 
 
         loss = torch.clamp((1 - SSIM) , 0, 2)
-        if(True):
-            save_image(loss, 'result/train/SSIM_GRAY1.png')
+        if(viz_image):
+            save_image(loss, 'result/train/SSIM_GRAY' + name +'.png')
 
         return  torch.mean(loss)
 
