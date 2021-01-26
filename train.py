@@ -58,9 +58,9 @@ TrainImgLoader = torch.utils.data.DataLoader(
          DA.myImageFloder(all_left_img,all_right_img,all_left_disp, True), 
          batch_size= 1, shuffle= False, num_workers= 8, drop_last=False)
 
-# TestImgLoader = torch.utils.data.DataLoader(
-#          DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
-#          batch_size= 1, shuffle= False, num_workers= 4, drop_last=False)
+TestImgLoader = torch.utils.data.DataLoader(
+         DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
+         batch_size= 1, shuffle= False, num_workers= 1, drop_last=False)
 
 
 from dataloader import KITTI_submission_loader as DA
@@ -106,7 +106,7 @@ def train(imgL,imgR, disp_L,idx):
         if args.model == 'FCSMNet':
             disp_left = model(imgL,imgR)
         
-        print('prediction_time = %.4f [s]' %(time.time() - start_time))
+        # print('prediction_time = %.4f [s]' %(time.time() - start_time))
 
         if idx <10:
             save_image(disp_left/torch.max(disp_left), 'result/train/"left_' + test_left_img[idx].split('/')[-1])
@@ -115,7 +115,6 @@ def train(imgL,imgR, disp_L,idx):
             disp_left = torch.squeeze(disp_left,0)
         
         loss = F.smooth_l1_loss(disp_left[maskL], disp_trueL[maskL], size_average=True)
-        print("loss=",loss)
        
         loss.backward()
         optimizer.step()
@@ -123,49 +122,55 @@ def train(imgL,imgR, disp_L,idx):
 
         return loss.data
 
-def test():
-    model.eval() 
-    for inx in range(len(test_left_img)):    
-        if(inx>10):
-            break
-        imgL_o = Image.open(test_left_img[inx]).convert('RGB')
-        imgR_o = Image.open(test_right_img[inx]).convert('RGB')
+def test(imgL,imgR, disp_L,idx,visualize_result=False):
+    model.eval()
+
+    if args.cuda:
+        imgL, imgR, disp_true = imgL.cuda(), imgR.cuda(), disp_L.cuda()
+
+    maskL = disp_true < args.maxdisp
+    maskL = (disp_true > 0)
+    maskL.detach_()
+
+    if imgL.shape[2] % 16 != 0:
+        times = imgL.shape[2]//16       
+        top_pad = (times+1)*16 -imgL.shape[2]
+    else:
+        top_pad = 0
+
+    if imgL.shape[3] % 16 != 0:
+        times = imgL.shape[3]//16                       
+        right_pad = (times+1)*16-imgL.shape[3]
+    else:
+        right_pad = 0  
+
+    imgL = F.pad(imgL,(0,right_pad, top_pad,0))
+    imgR = F.pad(imgR,(0,right_pad, top_pad,0))
+
+    with torch.no_grad():
+        start_time = time.time()
+        if args.model == 'FCSMNet':
+            disp_left = model(imgL,imgR)
+        # print('prediction_time = %.4f [s]' %(time.time() - start_time))
+
+    if idx <10:
+        save_image(disp_left/torch.max(disp_left), 'result/train/"left_' + test_left_img[idx].split('/')[-1])
+
+    if disp_left.ndim == 4:
+        disp_left = torch.squeeze(disp_left,0)
+
+    if top_pad !=0 or right_pad != 0:
+        img = disp_left[:,top_pad:,:-right_pad]
+    else:
+        img = disp_left
+
+    if len(disp_true[maskL])==0:
+        loss = 0
+    else:
+        loss = F.l1_loss(img[maskL],disp_true[maskL])
+        #torch.mean(torch.abs(img[mask]-disp_true[mask]))  # end-point-error
         
-        imgL = transforms.ToTensor()(imgL_o)
-        imgR = transforms.ToTensor()(imgR_o)
-
-        # pad to width and hight to 16 times
-        if imgL.shape[1] % 16 != 0:
-            times = imgL.shape[1]//16       
-            top_pad = (times+1)*16 -imgL.shape[1]
-        else:
-            top_pad = 0
-
-        if imgL.shape[2] % 16 != 0:
-            times = imgL.shape[2]//16                       
-            right_pad = (times+1)*16-imgL.shape[2]
-        else:
-            right_pad = 0    
-
-        imgL = F.pad(imgL,(0,right_pad, top_pad,0)).unsqueeze(0)
-        imgR = F.pad(imgR,(0,right_pad, top_pad,0)).unsqueeze(0)
-
-        pred_dispL ,pred_dispR= model(imgL,imgR)
-        save_image(pred_dispL/torch.max(pred_dispL), 'result/train/"left_' + test_left_img[inx].split('/')[-1])
-        save_image(pred_dispR/torch.max(pred_dispR), 'result/train/"right_' + test_right_img[inx].split('/')[-1])
-        pred_dispL = torch.squeeze(pred_dispL)
-        pred_dispL = pred_dispL.data.cpu().numpy()
-
-        if top_pad !=0 or right_pad != 0:
-            img = pred_dispL[top_pad:,:-right_pad]
-        else:
-            img = pred_dispL
-
-        #save image
-        if(True):
-            img = (img*256).astype('uint16')
-            img = Image.fromarray(img)
-            img.save("result/train/"+test_left_img[inx].split('/')[-1])
+    return loss.data.cpu()
 
 
 def adjust_learning_rate(optimizer, epoch):
@@ -177,7 +182,7 @@ def adjust_learning_rate(optimizer, epoch):
     else:
         lr = 0.0001
     
-    print(lr)
+    print("learning rate = ", lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
@@ -186,25 +191,23 @@ def main():
     start_full_time = time.time()
     iteration = 0
     for epoch in range(0, args.epochs):
-        print('This is %d-th epoch' %(epoch))
-        total_train_loss = 0
         adjust_learning_rate(optimizer,epoch)
         # if epoch <100:
         #     continue
 
 
         ## training ##
+        total_train_loss = 0
         for batch_idx, (imgL_crop, imgR_crop, disp_crop_L) in enumerate(TrainImgLoader):
-          
-
             start_time = time.time()
             loss = train(imgL_crop,imgR_crop, disp_crop_L,batch_idx)
             iteration +=1
-            writer_train.add_scalar(
-                "total", loss, iteration)
-            print('Iter %d training loss = %.4f , traing_time = %.4f' %(batch_idx, loss, time.time() - start_time))
+            print('epoch %d , Iter %d , traing_time = %.4f' %(epoch ,batch_idx, time.time() - start_time))
             total_train_loss += loss
-            print('epoch %d total training loss = %.4f' %(epoch, total_train_loss))
+        avg_train_loss = total_train_loss /len(TrainImgLoader)
+        print('epoch %d , avg_train_loss = %.4f' %(epoch, avg_train_loss))
+        writer_train.add_scalar(
+                "avg_train_loss", avg_train_loss, epoch)
 
 
 
@@ -215,11 +218,18 @@ def main():
 		    'state_dict': model.state_dict(),
                     'train_loss': total_train_loss/len(TrainImgLoader),
 		}, savefilename)
-        print('full training time = %.2f HR' %((time.time() - start_full_time)/3600))
+        # print('full training time = %.4f HR' %((time.time() - start_full_time)/3600))
 
 
         #test
-        #test()
+        total_test_loss = 0
+        for batch_idx, (imgL_crop_test, imgR_crop_test, disp_crop_L_test) in enumerate(TestImgLoader):
+            total_test_loss +=test(imgL_crop_test, imgR_crop_test, disp_crop_L_test,batch_idx)
+
+        avg_test_loss = total_test_loss / len(TestImgLoader)
+        writer_test.add_scalar(
+            "avg_test_loss", avg_test_loss, epoch)
+        print('epoch %d , avg_test_loss = %.4f ' %(epoch, avg_test_loss ))
         
     writer_train.close()
     writer_test.close()
