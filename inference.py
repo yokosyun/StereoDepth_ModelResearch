@@ -9,20 +9,18 @@ import torch.nn.functional as F
 import numpy as np
 import time
 import math
-from models import stackhourglass as psm_net
-from models import basic as basic_net
 from models import FCSMNet as FCSMNet
 from PIL import Image
 from torchvision.utils import save_image
 
-parser = argparse.ArgumentParser(description='PSMNet')
+parser = argparse.ArgumentParser(description='FCSMNet')
 parser.add_argument('--KITTI', default='2015',
                     help='KITTI version')
 parser.add_argument('--datapath', default='/media/yoko/SSD-PGU3/workspace/datasets/KITTI/data_scene_flow/training/',
                     help='select model')
 parser.add_argument('--loadmodel', default='./result/model.tar',
                     help='loading model')                                  
-parser.add_argument('--model', default='stackhourglass',
+parser.add_argument('--model', default='FCSMNet',
                     help='select model')
 parser.add_argument('--maxdisp', type=int, default=192,
                     help='maxium disparity')
@@ -47,12 +45,9 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-if args.model == 'stackhourglass':
-    model = psm_net.PSMNet(args.maxdisp)
-elif args.model == 'basic':
-    model = basic_net.PSMNet(args.maxdisp)
-elif args.model == 'FCSMNet':
-    model = FCSMNet.PSMNet(args.maxdisp)
+
+if args.model == 'FCSMNet':
+    model = FCSMNet.FCSMNet(args.maxdisp)
 else:
     print('no model')
 
@@ -62,7 +57,7 @@ if args.cuda:
 
 
 if args.loadmodel is not None:
-    print('load PSMNet')
+    print('load FCSMNet')
     state_dict = torch.load(args.loadmodel)
     model.load_state_dict(state_dict['state_dict'])
 
@@ -85,7 +80,7 @@ def test(imgL,imgR):
 
         with torch.no_grad():
             start_time = time.time()
-            pred_dispL, disp_right, tmp_right,tmp_left= model(imgL,imgR)
+            pred_dispL, disp_right= model(imgL,imgR)
             processing_time = time.time() - start_time
             print('time = %.4f' %(processing_time))
 

@@ -16,9 +16,9 @@ Act = nn.ReLU
 # Act = MishAuto
 
 
-class PSMNet(nn.Module):
+class FCSMNet(nn.Module):
     def __init__(self, maxdisp):
-        super(PSMNet, self).__init__()
+        super(FCSMNet, self).__init__()
         self.maxdisp = maxdisp
         self.feature_extraction = feature_extraction()
 
@@ -144,29 +144,17 @@ class PSMNet(nn.Module):
         return up1
 
 
+
+
     def disparity_regression(self, input, height, width):
+    
         left_disp = self.classify(input)
         left_disp = torch.sigmoid(left_disp)
         left_disp = left_disp * self.maxdisp
+        if left_disp.ndim ==3:
+             left_disp = torch.unsqueeze(left_disp,0)
         left_disp = F.upsample(left_disp, [height,width],mode='bilinear')
         return left_disp
-
-
-
-    # def disparity_regression(self, input, height, width):
-    
-    #     lr_disp = self.classify(input)
-    #     lr_disp = torch.sigmoid(lr_disp)
-    #     lr_disp = lr_disp * self.maxdisp
-    #     left_disp = lr_disp[:,0,:,:]
-    #     right_disp = lr_disp[:,1,:,:]
-    #     if left_disp.ndim ==3:
-    #          left_disp = torch.unsqueeze(left_disp,0)
-    #          right_disp = torch.unsqueeze(right_disp,0)
-    #     left_disp = F.upsample(left_disp, [height,width],mode='bilinear')
-    #     right_disp = F.upsample(right_disp, [height,width], mode='bilinear')
-
-    #     return left_disp,right_disp
 
 
 
