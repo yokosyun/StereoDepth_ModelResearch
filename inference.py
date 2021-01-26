@@ -80,7 +80,7 @@ def test(imgL,imgR):
 
         with torch.no_grad():
             start_time = time.time()
-            pred_dispL, disp_right= model(imgL,imgR)
+            pred_dispL = model(imgL,imgR)
             processing_time = time.time() - start_time
             print('time = %.4f' %(processing_time))
 
