@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import random
 from PIL import Image, ImageOps
 import numpy as np
-import preprocess 
+from . import preprocess 
 import torch.nn as nn
 
 IMG_EXTENSIONS = [
@@ -38,32 +38,28 @@ class myImageFloder(data.Dataset):
         left  = self.left[index]
         right = self.right[index]
         disp_L= self.disp_L[index]
-
+    
+    
         left_img = self.loader(left)
         right_img = self.loader(right)
         dataL = self.dploader(disp_L)
+       
+    
+
+
+    
 
 
         if self.training:  
            w, h = left_img.size
-        #    th, tw = 256, 512
            th, tw = 368, 1232
- 
-        #    x1 = random.randint(0, w - tw)
-        #    y1 = random.randint(0, h - th)
-           
-        #org
-        #    left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
-        #    right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
-
            left_img = left_img.crop((w-tw, h-th, w, h))
            right_img = right_img.crop((w-tw, h-th, w, h))
            
            dataL = dataL.crop((w-tw, h-th, w, h))
-
            dataL = np.ascontiguousarray(dataL,dtype=np.float32)/256
-        #    dataL = dataL[y1:y1 + th, x1:x1 + tw]
-           
+
+       
 
            processed = preprocess.get_transform(augment=False) 
            left_img   = transforms.ToTensor()(left_img)
