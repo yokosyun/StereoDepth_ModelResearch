@@ -15,6 +15,7 @@ import math
 from dataloader import KITTIloader2015 as lt
 from dataloader import KITTILoader as DA
 from models import FCSMNet as FCSMNet
+from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
@@ -69,6 +70,8 @@ test_left_img, test_right_img = DA.dataloader(args.datapath)
 
 if args.model == 'FCSMNet':
     model = FCSMNet.FCSMNet(args.maxdisp)
+elif args.model == 'CorrSMNet_Sigmoid':
+    model = CorrSMNet_Sigmoid.CorrSMNet_Sigmoid(args.maxdisp)
 else:
     print('no model')
 
@@ -103,8 +106,8 @@ def train(imgL,imgR, disp_L,idx):
 
         start_time = time.time()
 
-        if args.model == 'FCSMNet':
-            disp_left = model(imgL,imgR)
+        
+        disp_left = model(imgL,imgR)
         
         # print('prediction_time = %.4f [s]' %(time.time() - start_time))
 
@@ -149,8 +152,7 @@ def test(imgL,imgR, disp_L,idx,visualize_result=False):
 
     with torch.no_grad():
         start_time = time.time()
-        if args.model == 'FCSMNet':
-            disp_left = model(imgL,imgR)
+        disp_left = model(imgL,imgR)
         # print('prediction_time = %.4f [s]' %(time.time() - start_time))
 
     if idx <10:

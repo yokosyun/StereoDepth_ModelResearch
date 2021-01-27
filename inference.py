@@ -10,6 +10,7 @@ import numpy as np
 import time
 import math
 from models import FCSMNet as FCSMNet
+from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
 from PIL import Image
 from torchvision.utils import save_image
 
@@ -48,6 +49,8 @@ if args.cuda:
 
 if args.model == 'FCSMNet':
     model = FCSMNet.FCSMNet(args.maxdisp)
+elif args.model == 'CorrSMNet_Sigmoid':
+    model = CorrSMNet_Sigmoid.CorrSMNet_Sigmoid(args.maxdisp)
 else:
     print('no model')
 
