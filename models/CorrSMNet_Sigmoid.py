@@ -10,7 +10,6 @@ import sys
 sys.path.append('../')
 from utils.activations_autofn import MishAuto
 from utils.selectedNorm import *
-
 Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
@@ -36,7 +35,7 @@ class Corr1d(nn.Module):
         D = self.D
         stride = self.stride
         kernel_size = self.kernel_size
-        corrmap = Variable(torch.zeros(bn, D, h, w).type_as(fL.data))
+        corrmap = fL.new_zeros([bn, D, h, w], requires_grad=False)
         corrmap[:, 0] = self.simfun(fL, fR)
         for i in range(1, D):
             if(i >= w): break
@@ -197,15 +196,13 @@ class CorrSMNet_Sigmoid(nn.Module):
 
     def forward(self, left, right):
 
-
-        left_feature     = self.feature_extraction(left)
+        left_feature     = self.feature_extraction(left) 
         right_feature  = self.feature_extraction(right)
 
         corr = self.corr(left_feature, right_feature)
-        
+
         up1 = self.estimate_disparity(corr)
         
         pred_left = self.disparity_regression(up1,left.size()[2],left.size()[3])
-        
 
         return pred_left
