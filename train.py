@@ -16,6 +16,7 @@ from dataloader import KITTIloader2015 as lt
 from dataloader import KITTILoader as DA
 from models import FCSMNet as FCSMNet
 from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
+from models import CVSMNet_SoftArgMin as CVSMNet_SoftArgMin
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
@@ -60,8 +61,8 @@ TrainImgLoader = torch.utils.data.DataLoader(
          batch_size= 1, shuffle= False, num_workers= 8, drop_last=False)
 
 TestImgLoader = torch.utils.data.DataLoader(
-         DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
-         batch_size= 1, shuffle= False, num_workers= 1, drop_last=False)
+        DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
+       batch_size= 1, shuffle= False, num_workers= 1, drop_last=False)
 
 
 from dataloader import KITTI_submission_loader as DA
@@ -72,6 +73,8 @@ if args.model == 'FCSMNet':
     model = FCSMNet.FCSMNet(args.maxdisp)
 elif args.model == 'CorrSMNet_Sigmoid':
     model = CorrSMNet_Sigmoid.CorrSMNet_Sigmoid(args.maxdisp)
+elif args.model == 'CVSMNet_SoftArgMin':
+    model = CVSMNet_SoftArgMin.CVSMNet_SoftArgMin(args.maxdisp)
 else:
     print('no model')
 
@@ -226,11 +229,11 @@ def main():
         #test
         total_test_loss = 0
         for batch_idx, (imgL_crop_test, imgR_crop_test, disp_crop_L_test) in enumerate(TestImgLoader):
-            total_test_loss +=test(imgL_crop_test, imgR_crop_test, disp_crop_L_test,batch_idx)
+           total_test_loss +=test(imgL_crop_test, imgR_crop_test, disp_crop_L_test,batch_idx)
 
         avg_test_loss = total_test_loss / len(TestImgLoader)
         writer_test.add_scalar(
-            "avg_test_loss", avg_test_loss, epoch)
+           "avg_test_loss", avg_test_loss, epoch)
         print('epoch %d , avg_test_loss = %.4f ' %(epoch, avg_test_loss ))
         
     writer_train.close()

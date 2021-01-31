@@ -11,6 +11,7 @@ import time
 import math
 from models import FCSMNet as FCSMNet
 from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
+from models import CVSMNet_SoftArgMin as CVSMNet_SoftArgMin
 from PIL import Image
 from torchvision.utils import save_image
 
@@ -51,6 +52,8 @@ if args.model == 'FCSMNet':
     model = FCSMNet.FCSMNet(args.maxdisp)
 elif args.model == 'CorrSMNet_Sigmoid':
     model = CorrSMNet_Sigmoid.CorrSMNet_Sigmoid(args.maxdisp)
+elif args.model == 'CVSMNet_SoftArgMin':
+    model = CVSMNet_SoftArgMin.CVSMNet_SoftArgMin(args.maxdisp)
 else:
     print('no model')
 
