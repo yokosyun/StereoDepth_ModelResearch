@@ -53,6 +53,7 @@ class myImageFloder(data.Dataset):
         if self.training:  
            w, h = left_img.size
            th, tw = 368, 1232
+        #    th, tw = 256, 512
            left_img = left_img.crop((w-tw, h-th, w, h))
            right_img = right_img.crop((w-tw, h-th, w, h))
            
