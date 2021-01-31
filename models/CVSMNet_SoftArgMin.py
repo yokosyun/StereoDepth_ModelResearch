@@ -78,7 +78,7 @@ class CVSMNet_SoftArgMin(nn.Module):
         D = self.maxdisp//4
         bn, c, h, w = refimg_fea.shape
         cost = refimg_fea.new_zeros([bn, 2*c , D, h, w], requires_grad=False)
-        # cost = Variable(torch.FloatTensor(refimg_fea.size()[0], refimg_fea.size()[1]*2, self.maxdisp/4,  refimg_fea.size()[2],  refimg_fea.size()[3]).zero_(), volatile= not self.training).cuda()
+        
         for i in range(D):
             if i > 0 :
                 cost[:, :refimg_fea.size()[1], i, :,i:]   = refimg_fea[:,:,:,i:]
@@ -92,7 +92,6 @@ class CVSMNet_SoftArgMin(nn.Module):
 
 
     def estimate_disparity(self, cost):
-        # print("cost=",cost.shape)
         cost0 = self.dres0(cost)#this layer should hangle matching mainly
         cost0 = self.dres1(cost0) + cost0 #refinement
         cost0 = self.dres2(cost0) + cost0 #refinement
