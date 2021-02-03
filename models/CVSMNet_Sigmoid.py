@@ -15,9 +15,9 @@ Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
 
-class CVSMNet_SoftArgMin(nn.Module):
+class CVSMNet_Sigmoid(nn.Module):
     def __init__(self, maxdisp):
-        super(CVSMNet_SoftArgMin, self).__init__()
+        super(CVSMNet_Sigmoid, self).__init__()
         self.maxdisp = maxdisp
         self.feature_extraction = feature_extraction()
 
@@ -62,9 +62,10 @@ class CVSMNet_SoftArgMin(nn.Module):
             Act(inplace=True),
             nn.Conv3d(in_channels//2, in_channels//2, kernel_size=3, padding=1, stride=1,bias=False),
             nn.InstanceNorm3d(in_channels//2)
-            ) 
- 
-        self.classify = nn.Sequential(
+            )
+
+
+        self.downDimension = nn.Sequential(
             nn.Conv3d(in_channels//2, in_channels//2, kernel_size=3, padding=1, stride=1,bias=False),
             nn.InstanceNorm3d(in_channels//2),
             Act(inplace=True),
@@ -72,16 +73,36 @@ class CVSMNet_SoftArgMin(nn.Module):
             )
 
 
-        ##Norm Version
-        # self.classify = nn.Sequential(
-        #     nn.Conv3d(in_channels//2, in_channels//2, kernel_size=3, padding=1, stride=1,bias=False),
-        #     nn.InstanceNorm3d(in_channels//2),
-        #     Act(inplace=True),
+        # Norm Version
+        # self.downDimension = nn.Sequential(
         #     nn.Conv3d(in_channels//2, 1, kernel_size=3, padding=1, stride=1,bias=False),
-        #     nn.InstanceNorm3d(1),
+        #     nn.InstanceNorm3d(1)
         #     )
 
-        self.disparityregression = disparityregression(self.maxdisp//4)
+        # self.classify = nn.Sequential(
+        #     nn.Conv2d(self.maxdisp//4, self.maxdisp//4, kernel_size=3, padding=1, stride=1,bias=False),
+        #     nn.InstanceNorm2d(self.maxdisp//4),
+        #     Act(inplace=True),
+        #     nn.Conv2d(self.maxdisp//4, 1, kernel_size=3, padding=1, stride=1,bias=False)
+        # )
+
+        self.classify = nn.Sequential(
+            nn.Conv2d(self.maxdisp//4, self.maxdisp//4, kernel_size=3, padding=1, stride=1,bias=False),
+            nn.InstanceNorm2d(self.maxdisp//4),
+            Act(inplace=True),
+            nn.Conv2d(self.maxdisp//4, self.maxdisp//4, kernel_size=3, padding=1, stride=1,bias=False),
+            nn.InstanceNorm2d(self.maxdisp//4),
+            Act(inplace=True),
+            nn.Conv2d(self.maxdisp//4, self.maxdisp//4, kernel_size=3, padding=1, stride=1,bias=False),
+            nn.InstanceNorm2d(self.maxdisp//4),
+            Act(inplace=True),
+            nn.Conv2d(self.maxdisp//4, self.maxdisp//4, kernel_size=3, padding=1, stride=1,bias=False),
+            nn.InstanceNorm2d(self.maxdisp//4),
+            Act(inplace=True),
+            nn.Conv2d(self.maxdisp//4, 1, kernel_size=3, padding=1, stride=1,bias=False)
+        )
+
+
 
 
     def create_costvolume(self,refimg_fea, targetimg_fea):
@@ -112,20 +133,24 @@ class CVSMNet_SoftArgMin(nn.Module):
 
     def disparity_regression(self, input, height, width):
 
-        cost = self.classify(input)
-        
-        prob = F.softmax(-cost,2)
+        prob = self.downDimension(input)
 
-        prob = torch.squeeze(prob,0)
+        prob = torch.squeeze(prob,1)    
 
-        left_disp = self.disparityregression(prob)
+        left_disp = self.classify(prob)
+
+        left_disp = torch.sigmoid(left_disp)
+        left_disp = left_disp * self.maxdisp
+       
+
+
 
 
         if left_disp.ndim ==3:
              left_disp = torch.unsqueeze(left_disp,0)
         left_disp = F.upsample(left_disp, [height,width],mode='bilinear')
 
-        return left_disp * 4
+        return left_disp
 
 
 

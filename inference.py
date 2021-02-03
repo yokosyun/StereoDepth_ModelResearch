@@ -12,6 +12,7 @@ import math
 from models import FCSMNet as FCSMNet
 from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
 from models import CVSMNet_SoftArgMin as CVSMNet_SoftArgMin
+from models import CVSMNet_Sigmoid as CVSMNet_Sigmoid
 from PIL import Image
 from torchvision.utils import save_image
 
@@ -54,6 +55,8 @@ elif args.model == 'CorrSMNet_Sigmoid':
     model = CorrSMNet_Sigmoid.CorrSMNet_Sigmoid(args.maxdisp)
 elif args.model == 'CVSMNet_SoftArgMin':
     model = CVSMNet_SoftArgMin.CVSMNet_SoftArgMin(args.maxdisp)
+elif args.model == 'CVSMNet_Sigmoid':
+    model = CVSMNet_Sigmoid.CVSMNet_Sigmoid(args.maxdisp)
 else:
     print('no model')
 
@@ -63,7 +66,7 @@ if args.cuda:
 
 
 if args.loadmodel is not None:
-    print('load FCSMNet')
+    print('load model')
     state_dict = torch.load(args.loadmodel)
     model.load_state_dict(state_dict['state_dict'])
 
