@@ -19,12 +19,10 @@ Act = nn.ReLU
 Norm = nn.InstanceNorm2d
 #Norm = nn.GroupNorm
 
-
 def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
     return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
                         Norm(out_planes)
 )
-
 
 class BasicBlock(nn.Module):
     expansion = 1
