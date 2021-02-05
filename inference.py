@@ -13,6 +13,7 @@ from models import FCSMNet as FCSMNet
 from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
 from models import CVSMNet_SoftArgMin as CVSMNet_SoftArgMin
 from models import CVSMNet_Sigmoid as CVSMNet_Sigmoid
+from models import CVSMNet_Downsize as CVSMNet_Downsize
 from PIL import Image
 from torchvision.utils import save_image
 
@@ -57,6 +58,8 @@ elif args.model == 'CVSMNet_SoftArgMin':
     model = CVSMNet_SoftArgMin.CVSMNet_SoftArgMin(args.maxdisp)
 elif args.model == 'CVSMNet_Sigmoid':
     model = CVSMNet_Sigmoid.CVSMNet_Sigmoid(args.maxdisp)
+elif args.model == 'CVSMNet_Downsize':
+    model = CVSMNet_Downsize.CVSMNet_Downsize(args.maxdisp)
 else:
     print('no model')
 
@@ -127,7 +130,9 @@ def main():
                 times = imgL.shape[2]//16                       
                 right_pad = (times+1)*16-imgL.shape[2]
             else:
-                right_pad = 0    
+                right_pad = 0
+
+            
 
             imgL = F.pad(imgL,(0,right_pad, top_pad,0)).unsqueeze(0)
             imgR = F.pad(imgR,(0,right_pad, top_pad,0)).unsqueeze(0)
