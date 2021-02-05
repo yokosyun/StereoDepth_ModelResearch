@@ -18,6 +18,7 @@ from models import FCSMNet as FCSMNet
 from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
 from models import CVSMNet_SoftArgMin as CVSMNet_SoftArgMin
 from models import CVSMNet_Sigmoid as CVSMNet_Sigmoid
+from models import CVSMNet_Downsize as CVSMNet_Downsize
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
@@ -76,8 +77,8 @@ elif args.model == 'CorrSMNet_Sigmoid':
     model = CorrSMNet_Sigmoid.CorrSMNet_Sigmoid(args.maxdisp)
 elif args.model == 'CVSMNet_SoftArgMin':
     model = CVSMNet_SoftArgMin.CVSMNet_SoftArgMin(args.maxdisp)
-elif args.model == 'CVSMNet_Sigmoid':
-    model = CVSMNet_Sigmoid.CVSMNet_Sigmoid(args.maxdisp)
+elif args.model == 'CVSMNet_Downsize':
+    model = CVSMNet_Downsize.CVSMNet_Downsize(args.maxdisp)
 else:
     print('no model')
 
@@ -115,7 +116,7 @@ def train(imgL,imgR, disp_L,idx):
         
         disp_left = model(imgL,imgR)
         
-        # print('prediction_time = %.4f [s]' %(time.time() - start_time))
+        print('prediction_time = %.4f [s]' %(time.time() - start_time))
 
         if idx <10:
             save_image(disp_left/torch.max(disp_left), 'result/train/"left_' + test_left_img[idx].split('/')[-1])
