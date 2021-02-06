@@ -14,6 +14,8 @@ from models import CorrSMNet_Sigmoid as CorrSMNet_Sigmoid
 from models import CVSMNet_SoftArgMin as CVSMNet_SoftArgMin
 from models import CVSMNet_Sigmoid as CVSMNet_Sigmoid
 from models import CVSMNet_Downsize as CVSMNet_Downsize
+from models import CVSMNet_SoftArgMin_3DUNetDisp as CVSMNet_SoftArgMin_3DUNetDisp
+
 from PIL import Image
 from torchvision.utils import save_image
 
@@ -60,6 +62,8 @@ elif args.model == 'CVSMNet_Sigmoid':
     model = CVSMNet_Sigmoid.CVSMNet_Sigmoid(args.maxdisp)
 elif args.model == 'CVSMNet_Downsize':
     model = CVSMNet_Downsize.CVSMNet_Downsize(args.maxdisp)
+elif args.model == 'CVSMNet_SoftArgMin_3DUNetDisp':
+    model = CVSMNet_SoftArgMin_3DUNetDisp.CVSMNet_SoftArgMin_3DUNetDisp(args.maxdisp)
 else:
     print('no model')
 
