@@ -16,6 +16,7 @@ from models import CVSMNet_Sigmoid as CVSMNet_Sigmoid
 from models import CVSMNet_Downsize as CVSMNet_Downsize
 from models import CVSMNet_SoftArgMin_3DUNetDisp as CVSMNet_SoftArgMin_3DUNetDisp
 from models import CVSMNet_SoftArgMin_3DUNetSpace as CVSMNet_SoftArgMin_3DUNetSpace
+from models import CVSMNet_SoftArgMin_3DUNetAll as CVSMNet_SoftArgMin_3DUNetAll
 
 
 from PIL import Image
@@ -68,6 +69,8 @@ elif args.model == 'CVSMNet_SoftArgMin_3DUNetDisp':
     model = CVSMNet_SoftArgMin_3DUNetDisp.CVSMNet_SoftArgMin_3DUNetDisp(args.maxdisp)
 elif args.model == 'CVSMNet_SoftArgMin_3DUNetSpace':
     model = CVSMNet_SoftArgMin_3DUNetSpace.CVSMNet_SoftArgMin_3DUNetSpace(args.maxdisp)
+elif args.model == 'CVSMNet_SoftArgMin_3DUNetAll':
+    model = CVSMNet_SoftArgMin_3DUNetAll.CVSMNet_SoftArgMin_3DUNetAll(args.maxdisp)
 else:
     print('no model')
 
