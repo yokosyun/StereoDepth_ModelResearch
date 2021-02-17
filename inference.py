@@ -18,6 +18,7 @@ from models import CVSMNet_SoftArgMin_3DUNetDisp as CVSMNet_SoftArgMin_3DUNetDis
 from models import CVSMNet_SoftArgMin_3DUNetSpace as CVSMNet_SoftArgMin_3DUNetSpace
 from models import CVSMNet_SoftArgMin_3DUNetAll as CVSMNet_SoftArgMin_3DUNetAll
 from models import CVSMNet_SoftArgMin_increaseDim as CVSMNet_SoftArgMin_increaseDim
+from models import CVSMNet_SoftArgMin_trilinear as CVSMNet_SoftArgMin_trilinear
 from models import CVSMNet_SoftArgMax as CVSMNet_SoftArgMax
 
 
@@ -77,6 +78,8 @@ elif args.model == "CVSMNet_SoftArgMax":
     model = CVSMNet_SoftArgMax.CVSMNet_SoftArgMax(args.maxdisp)
 elif args.model == "CVSMNet_SoftArgMin_increaseDim":
     model = CVSMNet_SoftArgMin_increaseDim.CVSMNet_SoftArgMin_increaseDim(args.maxdisp)
+elif args.model == "CVSMNet_SoftArgMin_trilinear":
+    model = CVSMNet_SoftArgMin_trilinear.CVSMNet_SoftArgMin_trilinear(args.maxdisp)
 else:
     print("no model")
 
