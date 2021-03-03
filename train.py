@@ -25,6 +25,8 @@ from models import CVSMNet_SoftArgMin_3DUNetAll as CVSMNet_SoftArgMin_3DUNetAll
 from models import CVSMNet_SoftArgMin_increaseDim as CVSMNet_SoftArgMin_increaseDim
 from models import CVSMNet_SoftArgMin_trilinear as CVSMNet_SoftArgMin_trilinear
 from models import CVSMNet_SoftArgMax as CVSMNet_SoftArgMax
+from models import CVSMNet_SoftArgMin_Full as CVSMNet_SoftArgMin_Full
+
 
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
@@ -109,6 +111,8 @@ elif args.model == "CVSMNet_SoftArgMin_increaseDim":
     model = CVSMNet_SoftArgMin_increaseDim.CVSMNet_SoftArgMin_increaseDim(args.maxdisp)
 elif args.model == "CVSMNet_SoftArgMin_trilinear":
     model = CVSMNet_SoftArgMin_trilinear.CVSMNet_SoftArgMin_trilinear(args.maxdisp)
+elif args.model == "CVSMNet_SoftArgMin_Full":
+    model = CVSMNet_SoftArgMin_Full.CVSMNet_SoftArgMin_Full(args.maxdisp)
 else:
     print("no model")
 
