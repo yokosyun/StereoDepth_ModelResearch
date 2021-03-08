@@ -8,6 +8,7 @@ from PIL import Image, ImageOps
 import numpy as np
 from . import preprocess
 import torch.nn as nn
+from torchvision.utils import save_image
 
 IMG_EXTENSIONS = [
     ".jpg",
@@ -83,9 +84,32 @@ class myImageFloder(data.Dataset):
                 dataL = dataL.crop((w - tw, h - th, w, h))
                 dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
 
-            processed = preprocess.get_transform(augment=False)
-            left_img = transforms.ToTensor()(left_img)
-            right_img = transforms.ToTensor()(right_img)
+            if False:
+                left_img = transforms.ToTensor()(left_img)
+                right_img = transforms.ToTensor()(right_img)
+            else:
+                # normalize = {
+                #     "mean": [0.485, 0.456, 0.406],
+                #     "std": [0.229, 0.224, 0.225],
+                # }
+                # t_list = [
+                #     transforms.ToTensor(),
+                #     transforms.Normalize(**normalize),
+                # ]
+                # tmp = transforms.Compose(t_list)(left_img)
+                # save_image(tmp, "tmp.png")
+
+                processed = preprocess.get_transform(augment=False)
+                left_img = processed(left_img)
+                right_img = processed(right_img)
+
+            # print("torch.max(left_img)=", torch.max(left_img))
+            # print("torch.min(left_img)=", torch.min(left_img))
+
+            # save_image(left_img, "left_img_org.png")
+            # save_image((left_img + 1) / torch.max(left_img + 1), "left_img_max.png")
+            # save_image((left_img + 1) / 2.0, "left_img.png")
+            # save_image(left_img_processed, "left_img_processed.png")
 
             return left_img, right_img, dataL
         else:
@@ -98,10 +122,13 @@ class myImageFloder(data.Dataset):
             dataL = dataL.crop((w - 1232, h - 368, w, h))
             dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
 
-            processed = preprocess.get_transform(augment=False)
-
-            left_img = transforms.ToTensor()(left_img)
-            right_img = transforms.ToTensor()(right_img)
+            if False:
+                left_img = transforms.ToTensor()(left_img)
+                right_img = transforms.ToTensor()(right_img)
+            else:
+                processed = preprocess.get_transform(augment=False)
+                left_img = processed(left_img)
+                right_img = processed(right_img)
 
             return left_img, right_img, dataL
 
