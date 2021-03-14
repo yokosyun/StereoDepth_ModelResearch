@@ -8,6 +8,8 @@ import numpy as np
 from . import preprocess
 import torch.nn as nn
 
+from torchvision.utils import save_image
+
 IMG_EXTENSIONS = [
     ".jpg",
     ".JPG",
@@ -76,11 +78,25 @@ class myImageFloder(data.Dataset):
                 dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
                 dataL = dataL[y1 : y1 + th, x1 : x1 + tw]
             else:
-                left_img = left_img.crop((w - tw, h - th, w, h))
-                right_img = right_img.crop((w - tw, h - th, w, h))
+                width, height = left_img.width, left_img.height
 
-                dataL = dataL.crop((w - tw, h - th, w, h))
+                scale = np.random.randint(1, 3) + np.random.rand()
+                w = int(width * scale)
+                h = int(height * scale)
+
+                left_img = left_img.resize((w, h))
+                right_img = right_img.resize((w, h))
+                dataL = dataL.resize((w, h))
+
+                x1 = np.random.randint(0, w - tw)
+                y1 = np.random.randint(0, h - th)
+
+                left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
+                right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
+
                 dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
+                dataL = dataL[y1 : y1 + th, x1 : x1 + tw]
+                dataL *= scale
 
             processed = preprocess.get_transform(augment=False)
             left_img = transforms.ToTensor()(left_img)
