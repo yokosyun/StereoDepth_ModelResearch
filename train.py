@@ -3,7 +3,6 @@ import sys
 
 import argparse
 import os
-import random
 import torch
 import torch.nn as nn
 import torch.optim as optim

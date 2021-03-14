@@ -1,6 +1,5 @@
 import torch
 import torchvision.transforms as transforms
-import random
 
 __imagenet_stats = {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}
 
@@ -135,7 +134,7 @@ class Saturation(object):
 
     def __call__(self, img):
         gs = Grayscale()(img)
-        alpha = random.uniform(0, self.var)
+        alpha = np.random.uniform(0, self.var)
         return img.lerp(gs, alpha)
 
 
@@ -145,7 +144,7 @@ class Brightness(object):
 
     def __call__(self, img):
         gs = img.new().resize_as_(img).zero_()
-        alpha = random.uniform(0, self.var)
+        alpha = np.random.uniform(0, self.var)
         return img.lerp(gs, alpha)
 
 
@@ -156,7 +155,7 @@ class Contrast(object):
     def __call__(self, img):
         gs = Grayscale()(img)
         gs.fill_(gs.mean())
-        alpha = random.uniform(0, self.var)
+        alpha = np.random.uniform(0, self.var)
         return img.lerp(gs, alpha)
 
 
