@@ -38,3 +38,4 @@ logs/
 *.png
 *.pyc
 */*.pyc
+.vscode

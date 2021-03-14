@@ -3,7 +3,6 @@ import torch
 import torch.utils.data as data
 import torch
 import torchvision.transforms as transforms
-import random
 from PIL import Image, ImageOps
 import numpy as np
 from . import preprocess
@@ -69,9 +68,9 @@ class myImageFloder(data.Dataset):
             # th, tw = 368, 1232
             th, tw = 256, 512
 
-            if False:
-                x1 = random.randint(0, w - tw)
-                y1 = random.randint(0, h - th)
+            if True:
+                x1 = np.random.randint(0, w - tw)
+                y1 = np.random.randint(0, h - th)
 
                 left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
                 right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
@@ -80,28 +79,20 @@ class myImageFloder(data.Dataset):
                 dataL = dataL[y1 : y1 + th, x1 : x1 + tw]
             else:
                 width, height = left_img.width, left_img.height
-                # width = width * random.randint(1, 4)
-                # height = height * random.randint(1, 4)
 
                 scale = np.random.randint(1, 3) + np.random.rand()
                 w = int(width * scale)
                 h = int(height * scale)
-                print("width=", w)
-                print("height=", h)
 
                 left_img = left_img.resize((w, h))
                 right_img = right_img.resize((w, h))
                 dataL = dataL.resize((w, h))
 
-                left_img.save("left_img_before.png")
-
-                x1 = random.randint(0, w - tw)
-                y1 = random.randint(0, h - th)
+                x1 = np.random.randint(0, w - tw)
+                y1 = np.random.randint(0, h - th)
 
                 left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
                 right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
-
-                left_img.save("left_img_after.png")
 
                 dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
                 dataL = dataL[y1 : y1 + th, x1 : x1 + tw]
@@ -110,7 +101,6 @@ class myImageFloder(data.Dataset):
             processed = preprocess.get_transform(augment=False)
             left_img = transforms.ToTensor()(left_img)
             right_img = transforms.ToTensor()(right_img)
-            # save_image(left_img, "left_img.png")
 
             return left_img, right_img, dataL
         else:
