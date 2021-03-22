@@ -25,6 +25,7 @@ from models import CVSMNet_SoftArgMin_increaseDim as CVSMNet_SoftArgMin_increase
 from models import CVSMNet_SoftArgMin_trilinear as CVSMNet_SoftArgMin_trilinear
 from models import CVSMNet_SoftArgMax as CVSMNet_SoftArgMax
 from models import CVSMNet_SoftArgMin_Full as CVSMNet_SoftArgMin_Full
+import random
 
 
 from torchvision.utils import save_image
@@ -54,11 +55,20 @@ parser.add_argument(
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+
+def deterministic_training(seed=1):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
+
 # seed
-np.random.seed(seed=args.seed)
-torch.manual_seed(args.seed)
-if args.cuda:
-    torch.cuda.manual_seed(args.seed)
+deterministic_training(args.seed)
+
 
 (
     all_left_img,
@@ -73,7 +83,7 @@ if args.cuda:
 TrainImgLoader = torch.utils.data.DataLoader(
     DA.myImageFloder(all_left_img, all_right_img, all_left_disp, True),
     batch_size=1,
-    shuffle=False,
+    shuffle=True,
     num_workers=8,
     drop_last=False,
 )
