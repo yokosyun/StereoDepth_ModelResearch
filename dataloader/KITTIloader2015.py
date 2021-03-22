@@ -31,11 +31,13 @@ def dataloader(filepath):
 
     image = [img for img in os.listdir(filepath + left_fold) if img.find("_10") > -1]
 
-    # sorted(sorted(image))
+    image = sorted(image)
 
-    train = image[:200]
-    #   train = image[:160]
-    val = image[160:]
+    val = image[::10]
+    train = [img for img in image if img not in val]
+
+    print("val=", len(val))
+    print("train=", len(train))
 
     left_train = [filepath + left_fold + img for img in train]
     right_train = [filepath + right_fold + img for img in train]
