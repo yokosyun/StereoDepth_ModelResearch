@@ -25,152 +25,143 @@ class CVSMNet_SoftArgMin(nn.Module):
         self.maxdisp = maxdisp
         self.feature_extraction = feature_extraction()
 
-        in_channels = 64
+        in_channels = self.maxdisp // 4
 
         self.dres0 = nn.Sequential(
-            nn.Conv3d(
+            nn.Conv2d(
                 in_channels,
-                in_channels // 2,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
             Act(inplace=True),
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
             Act(inplace=True),
         )
 
         self.dres1 = nn.Sequential(
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
             Act(inplace=True),
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
         )
 
         self.dres2 = nn.Sequential(
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
             Act(inplace=True),
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
         )
 
         self.dres3 = nn.Sequential(
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
             Act(inplace=True),
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
         )
 
         self.dres4 = nn.Sequential(
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
             Act(inplace=True),
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
+            nn.Conv2d(
+                in_channels,
+                in_channels,
                 kernel_size=3,
                 padding=1,
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm3d(in_channels // 2),
+            nn.InstanceNorm2d(in_channels),
         )
-
-        # self.classify = nn.Sequential(
-        #     nn.Conv3d(
-        #         in_channels // 2,
-        #         in_channels // 2,
-        #         kernel_size=3,
-        #         padding=1,
-        #         stride=1,
-        #         bias=False,
-        #     ),
-        #     nn.InstanceNorm3d(in_channels // 2),
-        #     Act(inplace=True),
-        #     nn.Conv3d(
-        #         in_channels // 2, 1, kernel_size=3, padding=1, stride=1, bias=False
-        #     ),
-        # )
 
         self.classify = nn.Sequential(
-            nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
-            nn.InstanceNorm2d(self.maxdisp // 4),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
+            nn.Conv2d(
+                in_channels,
+                in_channels,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+                bias=False,
+            ),
+            nn.InstanceNorm2d(in_channels),
+            Act(inplace=True),
+            nn.Conv2d(
+                in_channels, in_channels, kernel_size=3, padding=1, stride=1, bias=False
+            ),
         )
 
-        self.corr = Corr1d(kernel_size=1, stride=1, D=self.maxdisp // 4, simfun=None)
-
-        ##Norm Version
         # self.classify = nn.Sequential(
-        #     nn.Conv3d(in_channels//2, in_channels//2, kernel_size=3, padding=1, stride=1,bias=False),
-        #     nn.InstanceNorm3d(in_channels//2),
-        #     Act(inplace=True),
-        #     nn.Conv3d(in_channels//2, 1, kernel_size=3, padding=1, stride=1,bias=False),
-        #     nn.InstanceNorm3d(1),
-        #     )
+        #     nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
+        #     nn.InstanceNorm2d(self.maxdisp // 4),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
+        # )
+
+        self.corr = Corr1d(kernel_size=1, stride=1, D=self.maxdisp // 4, simfun=None)
 
         self.disparityregression = disparityregression(self.maxdisp // 4)
 
@@ -202,11 +193,7 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         cost = self.classify(input)
 
-        print(cost.shape)
-
         prob = F.softmax(-cost, 1)
-
-        # prob = torch.squeeze(prob, 0)
 
         left_disp = self.disparityregression(prob)
 
@@ -222,10 +209,8 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         corr = self.corr(left_feature, right_feature)
 
-        # cost_volume = self.create_costvolume(left_feature, right_feature)
+        up1 = self.estimate_disparity(corr)
 
-        # up1 = self.estimate_disparity(cost_volume)
-
-        pred_left = self.disparity_regression(corr, left.size()[2], left.size()[3])
+        pred_left = self.disparity_regression(up1, left.size()[2], left.size()[3])
 
         return pred_left
