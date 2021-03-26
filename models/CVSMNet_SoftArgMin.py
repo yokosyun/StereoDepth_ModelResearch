@@ -16,6 +16,7 @@ import time
 Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
+from models.CorrSMNet_Sigmoid import Corr1d
 
 
 class CVSMNet_SoftArgMin(nn.Module):
@@ -137,21 +138,30 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.InstanceNorm3d(in_channels // 2),
         )
 
+        # self.classify = nn.Sequential(
+        #     nn.Conv3d(
+        #         in_channels // 2,
+        #         in_channels // 2,
+        #         kernel_size=3,
+        #         padding=1,
+        #         stride=1,
+        #         bias=False,
+        #     ),
+        #     nn.InstanceNorm3d(in_channels // 2),
+        #     Act(inplace=True),
+        #     nn.Conv3d(
+        #         in_channels // 2, 1, kernel_size=3, padding=1, stride=1, bias=False
+        #     ),
+        # )
+
         self.classify = nn.Sequential(
-            nn.Conv3d(
-                in_channels // 2,
-                in_channels // 2,
-                kernel_size=3,
-                padding=1,
-                stride=1,
-                bias=False,
-            ),
-            nn.InstanceNorm3d(in_channels // 2),
-            Act(inplace=True),
-            nn.Conv3d(
-                in_channels // 2, 1, kernel_size=3, padding=1, stride=1, bias=False
-            ),
+            nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
+            nn.InstanceNorm2d(self.maxdisp // 4),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
         )
+
+        self.corr = Corr1d(kernel_size=1, stride=1, D=self.maxdisp // 4, simfun=None)
 
         ##Norm Version
         # self.classify = nn.Sequential(
@@ -192,9 +202,11 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         cost = self.classify(input)
 
-        prob = F.softmax(-cost, 2)
+        print(cost.shape)
 
-        prob = torch.squeeze(prob, 0)
+        prob = F.softmax(-cost, 1)
+
+        # prob = torch.squeeze(prob, 0)
 
         left_disp = self.disparityregression(prob)
 
@@ -208,10 +220,12 @@ class CVSMNet_SoftArgMin(nn.Module):
         left_feature = self.feature_extraction(left)
         right_feature = self.feature_extraction(right)
 
-        cost_volume = self.create_costvolume(left_feature, right_feature)
+        corr = self.corr(left_feature, right_feature)
 
-        up1 = self.estimate_disparity(cost_volume)
+        # cost_volume = self.create_costvolume(left_feature, right_feature)
 
-        pred_left = self.disparity_regression(up1, left.size()[2], left.size()[3])
+        # up1 = self.estimate_disparity(cost_volume)
+
+        pred_left = self.disparity_regression(corr, left.size()[2], left.size()[3])
 
         return pred_left
