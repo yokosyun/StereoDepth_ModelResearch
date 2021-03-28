@@ -25,10 +25,10 @@ class CVSMNet_SoftArgMin(nn.Module):
         self.maxdisp = maxdisp
         self.feature_extraction = feature_extraction()
 
-        in_channels = self.maxdisp // 4
+        in_channels = 1
 
         self.dres0 = nn.Sequential(
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -36,9 +36,9 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -46,12 +46,12 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
         )
 
         self.dres1 = nn.Sequential(
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -59,9 +59,9 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -69,11 +69,11 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
         )
 
         self.dres2 = nn.Sequential(
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -81,9 +81,9 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -91,11 +91,11 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
         )
 
         self.dres3 = nn.Sequential(
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -103,9 +103,9 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -113,11 +113,11 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
         )
 
         self.dres4 = nn.Sequential(
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -125,9 +125,9 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -135,11 +135,11 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
         )
 
         self.classify = nn.Sequential(
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels,
                 in_channels,
                 kernel_size=3,
@@ -147,19 +147,12 @@ class CVSMNet_SoftArgMin(nn.Module):
                 stride=1,
                 bias=False,
             ),
-            nn.InstanceNorm2d(in_channels),
+            nn.InstanceNorm3d(in_channels),
             Act(inplace=True),
-            nn.Conv2d(
+            nn.Conv3d(
                 in_channels, in_channels, kernel_size=3, padding=1, stride=1, bias=False
             ),
         )
-
-        # self.classify = nn.Sequential(
-        #     nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
-        #     nn.InstanceNorm2d(self.maxdisp // 4),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(self.maxdisp // 4, self.maxdisp // 4, kernel_size=3, padding=1),
-        # )
 
         self.corr = Corr1d(kernel_size=1, stride=1, D=self.maxdisp // 4, simfun=None)
 
@@ -193,6 +186,8 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         cost = self.classify(input)
 
+        cost = torch.squeeze(cost, 1)
+
         prob = F.softmax(-cost, 1)
 
         left_disp = self.disparityregression(prob)
@@ -209,7 +204,7 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         corr = self.corr(left_feature, right_feature)
 
-        up1 = self.estimate_disparity(corr)
+        up1 = self.estimate_disparity(torch.unsqueeze(corr, 1))
 
         pred_left = self.disparity_regression(up1, left.size()[2], left.size()[3])
 
