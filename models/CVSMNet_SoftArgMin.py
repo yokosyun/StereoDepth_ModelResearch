@@ -27,7 +27,7 @@ def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
             stride=stride,
             bias=False,
         ),
-        nn.BatchNorm3d(out_planes),
+        nn.InstanceNorm3d(out_planes),
     )
 
 
@@ -64,7 +64,7 @@ class hourglass(nn.Module):
                 stride=2,
                 bias=False,
             ),
-            nn.BatchNorm3d(inplanes * 2),
+            nn.InstanceNorm3d(inplanes * 2),
         )  # +conv2
 
         self.conv6 = nn.Sequential(
@@ -77,7 +77,7 @@ class hourglass(nn.Module):
                 stride=2,
                 bias=False,
             ),
-            nn.BatchNorm3d(inplanes),
+            nn.InstanceNorm3d(inplanes),
         )  # +x
 
     def forward(self, x, presqu=None, postsqu=None):
