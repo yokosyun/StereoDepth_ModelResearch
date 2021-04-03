@@ -200,27 +200,27 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.InstanceNorm3d(in_channels // 2),
         )
 
-        # self.dres4 = nn.Sequential(
-        #     nn.Conv3d(
-        #         in_channels // 2,
-        #         in_channels // 2,
-        #         kernel_size=3,
-        #         padding=1,
-        #         stride=1,
-        #         bias=False,
-        #     ),
-        #     nn.InstanceNorm3d(in_channels // 2),
-        #     Act(inplace=True),
-        #     nn.Conv3d(
-        #         in_channels // 2,
-        #         in_channels // 2,
-        #         kernel_size=3,
-        #         padding=1,
-        #         stride=1,
-        #         bias=False,
-        #     ),
-        #     nn.InstanceNorm3d(in_channels // 2),
-        # )
+        self.dres4 = nn.Sequential(
+            nn.Conv3d(
+                in_channels // 2,
+                in_channels // 2,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+                bias=False,
+            ),
+            nn.InstanceNorm3d(in_channels // 2),
+            Act(inplace=True),
+            nn.Conv3d(
+                in_channels // 2,
+                in_channels // 2,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+                bias=False,
+            ),
+            nn.InstanceNorm3d(in_channels // 2),
+        )
 
         self.classify = nn.Sequential(
             nn.Conv3d(
@@ -240,9 +240,9 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         # self.dres2 = hourglass(in_channels // 2)
 
-        # self.dres3 = hourglass(in_channels // 2)
+        self.dres3 = hourglass(in_channels // 2)
 
-        self.dres4 = hourglass(in_channels // 2)
+        # self.dres4 = hourglass(in_channels // 2)
 
         ##Norm Version
         # self.classify = nn.Sequential(
