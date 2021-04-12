@@ -21,19 +21,48 @@ Norm = nn.InstanceNorm2d
 # Norm = nn.GroupNorm
 
 
-def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
-    return nn.Sequential(
-        nn.Conv2d(
-            in_planes,
-            out_planes,
+# https://github.com/seungjunlee96/Depthwise-Separable-Convolution_Pytorch
+class depthwise_separable_conv(nn.Module):
+    def __init__(
+        self, nin, nout, kernel_size=3, stride=1, padding=1, dilation=1, bias=False
+    ):
+        super(depthwise_separable_conv, self).__init__()
+        self.depthwise = nn.Conv2d(
+            nin,
+            nin,
             kernel_size=kernel_size,
             stride=stride,
-            padding=dilation if dilation > 1 else pad,
-            dilation=dilation,
-            bias=False,
-        ),
-        Norm(out_planes),
+            padding=padding,
+            groups=nin,
+            bias=bias,
+        )
+        self.pointwise = nn.Conv2d(nin, nout, kernel_size=1, bias=bias)
+
+    def forward(self, x):
+        out = self.depthwise(x)
+        out = self.pointwise(out)
+        return out
+
+
+def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
+    # if stride == 1 and dilation == 1:
+    #     return depthwise_separable_conv(in_planes, out_planes, kernel_size, pad)
+    return depthwise_separable_conv(
+        in_planes, out_planes, kernel_size, stride, pad, dilation
     )
+
+    # return nn.Sequential(
+    #     nn.Conv2d(
+    #         in_planes,
+    #         out_planes,
+    #         kernel_size=kernel_size,
+    #         stride=stride,
+    #         padding=dilation if dilation > 1 else pad,
+    #         dilation=dilation,
+    #         bias=False,
+    #     ),
+    #     Norm(out_planes),
+    # )
 
 
 class BasicBlock(nn.Module):
