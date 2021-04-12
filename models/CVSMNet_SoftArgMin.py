@@ -30,8 +30,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -40,8 +40,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -53,8 +53,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -63,8 +63,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -75,8 +75,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -85,8 +85,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -97,8 +97,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -107,8 +107,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -119,8 +119,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -129,8 +129,8 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
@@ -141,15 +141,15 @@ class CVSMNet_SoftArgMin(nn.Module):
             nn.Conv3d(
                 in_channels // 2,
                 in_channels // 2,
-                kernel_size=3,
-                padding=1,
+                kernel_size=1,
+                padding=0,
                 stride=1,
                 bias=False,
             ),
             nn.InstanceNorm3d(in_channels // 2),
             Act(inplace=True),
             nn.Conv3d(
-                in_channels // 2, 1, kernel_size=3, padding=1, stride=1, bias=False
+                in_channels // 2, 1, kernel_size=1, padding=0, stride=1, bias=False
             ),
         )
 
