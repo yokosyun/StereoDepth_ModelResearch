@@ -16,6 +16,27 @@ import time
 Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
+# https://github.com/seungjunlee96/Depthwise-Separable-Convolution_Pytorch
+class depthwise_separable_conv3d(nn.Module):
+    def __init__(
+        self, nin, nout, kernel_size=3, stride=1, padding=1, dilation=1, bias=False
+    ):
+        super(depthwise_separable_conv3d, self).__init__()
+        self.depthwise = nn.Conv3d(
+            nin,
+            nin,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            groups=nin,
+            bias=bias,
+        )
+        self.pointwise = nn.Conv3d(nin, nout, kernel_size=1, bias=bias)
+
+    def forward(self, x):
+        out = self.depthwise(x)
+        out = self.pointwise(out)
+        return out
 
 
 class CVSMNet_SoftArgMin(nn.Module):
@@ -27,7 +48,7 @@ class CVSMNet_SoftArgMin(nn.Module):
         in_channels = 64
 
         self.dres0 = nn.Sequential(
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels,
                 in_channels // 2,
                 kernel_size=3,
@@ -37,7 +58,7 @@ class CVSMNet_SoftArgMin(nn.Module):
             ),
             nn.InstanceNorm3d(in_channels // 2),
             Act(inplace=True),
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -50,7 +71,7 @@ class CVSMNet_SoftArgMin(nn.Module):
         )
 
         self.dres1 = nn.Sequential(
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -60,7 +81,7 @@ class CVSMNet_SoftArgMin(nn.Module):
             ),
             nn.InstanceNorm3d(in_channels // 2),
             Act(inplace=True),
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -72,7 +93,7 @@ class CVSMNet_SoftArgMin(nn.Module):
         )
 
         self.dres2 = nn.Sequential(
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -82,7 +103,7 @@ class CVSMNet_SoftArgMin(nn.Module):
             ),
             nn.InstanceNorm3d(in_channels // 2),
             Act(inplace=True),
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -94,7 +115,7 @@ class CVSMNet_SoftArgMin(nn.Module):
         )
 
         self.dres3 = nn.Sequential(
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -104,7 +125,7 @@ class CVSMNet_SoftArgMin(nn.Module):
             ),
             nn.InstanceNorm3d(in_channels // 2),
             Act(inplace=True),
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -116,7 +137,7 @@ class CVSMNet_SoftArgMin(nn.Module):
         )
 
         self.dres4 = nn.Sequential(
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
@@ -126,7 +147,7 @@ class CVSMNet_SoftArgMin(nn.Module):
             ),
             nn.InstanceNorm3d(in_channels // 2),
             Act(inplace=True),
-            nn.Conv3d(
+            depthwise_separable_conv3d(
                 in_channels // 2,
                 in_channels // 2,
                 kernel_size=3,
