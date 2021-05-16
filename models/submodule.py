@@ -12,6 +12,8 @@ import sys
 sys.path.append("../")
 from utils.activations_autofn import MishAuto
 
+from models.UNet import UNet
+
 Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
@@ -33,6 +35,21 @@ def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
             bias=False,
         ),
         Norm(out_planes),
+    )
+
+
+def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
+
+    return nn.Sequential(
+        nn.Conv3d(
+            in_planes,
+            out_planes,
+            kernel_size=kernel_size,
+            padding=pad,
+            stride=stride,
+            bias=False,
+        ),
+        nn.InstanceNorm3d(out_planes),
     )
 
 
@@ -156,6 +173,8 @@ class feature_extraction(nn.Module):
             nn.Conv2d(128, 32, kernel_size=1, padding=0, stride=1, bias=False),
         )
 
+        self.unet = UNet(input_channels=128, output_channels=128)
+
     def _make_layer(self, block, planes, blocks, stride, pad, dilation):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
@@ -183,6 +202,7 @@ class feature_extraction(nn.Module):
         output = self.layer1(output)
         output_raw = self.layer2(output)
         output = self.layer3(output_raw)
+        # output = self.unet(output)
         output_skip = self.layer4(output)
 
         output_branch1 = self.branch1(output_skip)
@@ -224,6 +244,7 @@ class feature_extraction(nn.Module):
             ),
             1,
         )
+
         output_feature = self.lastconv(output_feature)
 
         return output_feature

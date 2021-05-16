@@ -13,9 +13,98 @@ from utils.activations_autofn import MishAuto
 from utils.selectedNorm import *
 import time
 
+from models.UNet3D import UNet3D
+
 Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
+class hourglass(nn.Module):
+    def __init__(self, inplanes):
+        super(hourglass, self).__init__()
+
+        self.conv1 = nn.Sequential(
+            convbn_3d(inplanes, inplanes * 2, kernel_size=3, stride=2, pad=1),
+            nn.ReLU(inplace=True),
+        )
+
+        self.conv2 = convbn_3d(
+            inplanes * 2, inplanes * 2, kernel_size=3, stride=1, pad=1
+        )
+
+        self.conv3 = nn.Sequential(
+            convbn_3d(inplanes * 2, inplanes * 2, kernel_size=3, stride=2, pad=1),
+            nn.ReLU(inplace=True),
+        )
+
+        self.conv4 = nn.Sequential(
+            convbn_3d(inplanes * 2, inplanes * 2, kernel_size=3, stride=1, pad=1),
+            nn.ReLU(inplace=True),
+        )
+
+        self.conv5 = nn.Sequential(
+            convbn_3d(inplanes * 2, inplanes * 2, kernel_size=3, stride=1, pad=1),
+            nn.Upsample(scale_factor=2, mode="trilinear", align_corners=True),
+            # nn.ConvTranspose3d(
+            #     inplanes * 2,
+            #     inplanes * 2,
+            #     kernel_size=3,
+            #     padding=1,
+            #     output_padding=1,
+            #     stride=2,
+            #     bias=False,
+            # ),
+            # nn.InstanceNorm3d(inplanes * 2),
+        )  # +conv2
+
+        self.conv6 = nn.Sequential(
+            convbn_3d(inplanes * 2, inplanes * 2, kernel_size=3, stride=1, pad=1),
+            nn.Upsample(scale_factor=2, mode="trilinear", align_corners=True),
+            # nn.ConvTranspose3d(
+            #     inplanes * 2,
+            #     inplanes,
+            #     kernel_size=3,
+            #     padding=1,
+            #     output_padding=1,
+            #     stride=2,
+            #     bias=False,
+            # ),
+            # nn.InstanceNorm3d(inplanes),
+        )  # +x
+
+    def forward(self, x):
+
+        out = self.conv1(x)  # in:1/4 out:1/8
+        pre = self.conv2(out)  # in:1/8 out:1/8
+        pre = F.relu(pre, inplace=True)
+
+        out = self.conv3(pre)  # in:1/8 out:1/16
+        out = self.conv4(out)  # in:1/16 out:1/16
+        post = F.relu(self.conv5(out) + pre, inplace=True)  # 1/8+ 1/8
+
+        out = self.conv6(post)  # in:1/8 out:1/4
+
+        return out
+
+    # def forward(self, x, presqu, postsqu):
+
+    #     out = self.conv1(x)  # in:1/4 out:1/8
+    #     pre = self.conv2(out)  # in:1/8 out:1/8
+    #     if postsqu is not None:
+    #         pre = F.relu(pre + postsqu, inplace=True)
+    #     else:
+    #         pre = F.relu(pre, inplace=True)
+
+    #     out = self.conv3(pre)  # in:1/8 out:1/16
+    #     out = self.conv4(out)  # in:1/16 out:1/16
+
+    #     if presqu is not None:
+    #         post = F.relu(self.conv5(out) + presqu, inplace=True)  # in:1/16 out:1/8
+    #     else:
+    #         post = F.relu(self.conv5(out) + pre, inplace=True)
+
+    #     out = self.conv6(post)  # in:1/8 out:1/4
+
+    #     return out, pre, post
 
 
 class CVSMNet_SoftArgMin(nn.Module):
@@ -164,6 +253,12 @@ class CVSMNet_SoftArgMin(nn.Module):
 
         self.disparityregression = disparityregression(self.maxdisp // 4)
 
+        self.UNet3D = UNet3D(
+            input_channels=in_channels // 2, output_channels=in_channels // 2
+        )
+
+        self.dres2 = hourglass(in_channels // 2)
+
     def create_costvolume(self, refimg_fea, targetimg_fea):
         D = self.maxdisp // 4
         bn, c, h, w = refimg_fea.shape
@@ -183,9 +278,13 @@ class CVSMNet_SoftArgMin(nn.Module):
     def estimate_disparity(self, cost):
         cost0 = self.dres0(cost)  # this layer should hangle matching mainly
         cost0 = self.dres1(cost0) + cost0  # refinement
+        # out1, pre1, post1 = self.dres2(cost0, None, None)
+        # cost0 = out1 + cost0
         cost0 = self.dres2(cost0) + cost0  # refinement
         cost0 = self.dres3(cost0) + cost0  # refinement
-        cost0 = self.dres4(cost0) + cost0  # refinement
+        cost0 = self.dres4(cost0) + cost0  # refinement)
+
+        # cost0 = self.UNet3D(cost0) + cost0  # refinement
         return cost0
 
     def disparity_regression(self, input, height, width):
